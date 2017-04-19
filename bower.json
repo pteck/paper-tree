@@ -13,8 +13,7 @@
   ],
   "homepage": "https://github.com/vpusher/paper-tree",
   "authors": [
-    "Florian Maffini <florian.maffini@free.fr>",
-	"Nicolas Reinschmidt <reinschmidt@rsw-technik.de>"
+    "Florian Maffini <florian.maffini@free.fr>"
   ],
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0-rc.1",
