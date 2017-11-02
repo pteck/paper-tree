@@ -93,7 +93,7 @@ Custom property | Description | Default
 
         <div class="node-container">
             <div class="node-row">
-                <span class$="{{_computeClass(data.*)}}" on-click="toggleChildren"></span>
+                <span class$="{{_computeClass(data.*)}}" data-index$="{{data.name}}" on-click="toggleChildren"></span>
                 <template is="dom-if" if="{{_isEqualTo(data.type, 'tree')}}">
                     <span class="node-name" data-index$="{{data.name}}" on-click="toggleChildren">{{data.name}}</span>
                 </template>
