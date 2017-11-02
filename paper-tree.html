@@ -10,11 +10,20 @@ Example:
 @demo
 -->
 
+<style>
+
+    .root-list {
+        margin: 0;
+        padding-left: 40px;
+    }
+
+</style>
+
 <dom-module id="paper-tree">
     <template>
-        <div>
-            <paper-tree-node id="root" data="[[data]]" actions="[[actions]]"></paper-tree-node>
-        </div>
+        <template is="dom-repeat" items="{{data.children}}">
+                <paper-tree-node class="root-list" data="{{item}}"></paper-tree-node>
+        </template>
     </template>
 
     <script>
@@ -52,19 +61,16 @@ Example:
                         notify: true
                     },
 
-                    /**
-                     * `actions` available for all nodes. Each action object has the following fields:
-                     *
-                     * - `action.label`: string representing the display name of the menu item.
-                     * - `action.event`: string which is the event name to dispatch whenever the item is clicked.
-                     *
-                     */
-                    actions: {
-                        type: Array,
-                        value: function () {
-                            return null;
-                        },
-                        observer: "_actionsChanged"
+                    selectedElement: {
+                        type: Object,
+                        value: null,
+                        notify: true
+                    },
+
+                    toggled: {
+                        type: Object,
+                        value: null,
+                        notify: true
                     }
                 };
             }
@@ -78,20 +84,14 @@ Example:
             ready() {
                 super.ready();
                 this.addEventListener('select', e => this._selectNode(e));
+                this.addEventListener('toggle', e => this._toggleNode(e));
             }        
 
             /**
              * Called whenever the data is changed to notify the lower nodes.
              */
             _dataChanged() {
-                this.$.root.data = this.data;
-            };
-
-            /**
-             * Called whenever the actions list is changed to notify the lower nodes.
-             */
-            _actionsChanged() {
-                this.$.root.actions = this.actions;
+//                this.$.root.data = this.data;
             };
 
             /**
@@ -101,16 +101,27 @@ Example:
              */
             _selectNode(e) {
                 
-                if (this.selected) {
-                    this.selected.classList.toggle("selected", false);
+                if (this.selectedElement) {
+                    this.selectedElement.classList.toggle("selected", false);
                 }
 
                 // Only selects `<paper-tree-node>`.
-                if (e.detail && e.detail.tagName === 'PAPER-TREE-NODE') {
-                    this.selected = e.detail;
-                    this.selected.classList.toggle("selected", true);
+                if (e.detail.element && e.detail.element.tagName === 'PAPER-TREE-NODE') {
+                    this.selected = e.detail.selectedDetail;
+                    this.selectedElement = e.detail.element;
+                    this.selectedElement.classList.toggle("selected", true);
                 } else {
                     this.selected = null;
+                    this.selectedElement = null;
+                }
+            };
+
+            _toggleNode(e) {
+                // Only selects `<paper-tree-node>`.
+                if (e.detail.element && e.detail.element.tagName === 'PAPER-TREE-NODE') {
+                    this.toggled = e.detail.selectedDetail;
+                } else {
+                    this.toggled = null;
                 }
             };
 

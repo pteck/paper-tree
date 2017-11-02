@@ -39,16 +39,12 @@ Custom property | Description | Default
                 color: var(--paper-tree-selected-color, inherit);
             }
 
-			:host(.selected) > .node-container > .node-row > #actions {
-				display: inline-block;
-			}
-
             .node-container {
                 white-space: nowrap;
             }
 
             .node-row {
-                padding-left: 4px;
+                padding-left: 15px;
                 padding-right: 4px;
             }
 
@@ -61,40 +57,28 @@ Custom property | Description | Default
                 padding-left: 18px;
             }
 
-			.node-preicon:before {
-				margin-right: 5px;
-				@apply(--paper-tree-toggle-theme);
-			}
+            .node-preicon:before {
+                margin-right: 5px;
+                @apply(--paper-tree-toggle-theme);
+            }
 
-			.node-preicon.collapsed:before {
-				content: '\002B';
-			}
+            .node-preicon.collapsed:before {
+                content: '\002B';
+            }
 
-			.node-preicon.expanded:before {
-				content: '\2212';
-			}
+            .node-preicon.expanded:before {
+                content: '\2212';
+            }
 
             .node-preicon, .node-name {
                 cursor: pointer;
-            }
-
-            .node-icon {
-                cursor: pointer;
-                width: 24px;
-                height: 24px;
-                @apply(--paper-tree-icon-theme);
-            }
-
-            #actions {
-                display: none;
-                float: right;
-                padding: 0;
-                top: -8px; /* cancel the padding of `paper-icon-button`. */
+                font-size: 12px;
+                overflow: hidden;
             }
 
             ul {
                 margin: 0;
-                padding-left: 20px;
+                padding-left: 10px;
             }
 
             li {
@@ -109,24 +93,18 @@ Custom property | Description | Default
         <div class="node-container">
             <div class="node-row">
                 <span class$="{{_computeClass(data.*)}}" on-click="toggleChildren"></span>
-                <iron-icon class="node-icon" icon$="{{_computeIcon(data.icon)}}" on-click="select"></iron-icon>
-                <span class="node-name" on-click="select">{{data.name}}</span>
-                <template is="dom-if" if="{{actions}}">
-                    <paper-menu-button id="actions">
-                        <paper-icon-button icon="more-vert" noink class="dropdown-trigger"></paper-icon-button>
-                        <!--<paper-menu class="dropdown-content">
-                            <template is="dom-repeat" items="{{actions}}">
-                                <paper-item on-click="_actionClicked">{{item.label}}</paper-item>
-                            </template>
-                        </paper-menu>-->
-                    </paper-menu-button>
+                <template is="dom-if" if="{{_isEqualTo(data.type, 'tree')}}">
+                    <span class="node-name" data-index$="{{data.name}}" on-click="toggleChildren">{{data.name}}</span>
+                </template>
+                <template is="dom-if" if="{{_isEqualTo(data.type, 'blob')}}">
+                    <span class="node-name" data-index$="{{data.name}}" on-click="select">{{data.name}}</span>
                 </template>
             </div>
             <template is="dom-if" if="{{data.open}}">
                 <ul>
                     <template is="dom-repeat" items="{{data.children}}">
                         <li>
-                            <paper-tree-node data="{{item}}" actions="{{actions}}"></paper-tree-node>
+                            <paper-tree-node data="{{item}}"></paper-tree-node>
                         </li>
                     </template>
                 </ul>
@@ -136,7 +114,9 @@ Custom property | Description | Default
     <script>
         class PaperTreeNode extends Polymer.Element {
 
-            static get is() { return 'paper-tree-node'; }
+            static get is() {
+                return 'paper-tree-node';
+            }
 
             static get properties() {
                 return {
@@ -183,8 +163,12 @@ Custom property | Description | Default
 
             ready() {
                 super.ready();
-                
+
             }
+
+            _isEqualTo(title, string) {
+                return title == string;
+            };
 
 
             /**
@@ -207,30 +191,25 @@ Custom property | Description | Default
              */
             _computeClass(change) {
                 var open = change && change.base && change.base.open;
-                var children = change && change.base && change.base.children;
-                return 'node-preicon ' + ((open && children && children.length) ? 'expanded' : children && children.length ? 'collapsed' : '');
-            };
-
-            /**
-             * Compute the necessary node icon.
-             *
-             * @param {string=folder} an icon name.
-             * @return {string} the computed icon name.
-             */
-            _computeIcon(icon) {
-                return icon ? icon : 'folder';
+                var children = change && change.base && change.base.type == "tree";
+//                return 'node-preicon ' + ((open && children && children.length) ? 'expanded' : children && children.length ? 'collapsed' : '');
+                return 'node-preicon ' + ((open && children) ? 'expanded' : children ? 'collapsed' : '');
             };
 
             _actionClicked(event) {
                 console.log('ActionClicked');
-                this.dispatchEvent(new CustomEvent(event.model.item.event, { detail: this }));
+                this.dispatchEvent(new CustomEvent(event.model.item.event, {detail: this}));
             };
 
             /**
              * Highlights node as the selected node.
              */
-            select() {
-                this.dispatchEvent(new CustomEvent('select', { bubbles: true, composed: true, detail: this }));
+            select(e) {
+                let eventObject = {
+                    element: this,
+                    selectedDetail: e.currentTarget.dataset.index
+                }
+                this.dispatchEvent(new CustomEvent('select', {bubbles: true, composed: true, detail: eventObject}));
             };
 
             /**
@@ -250,11 +229,17 @@ Custom property | Description | Default
             /**
              * Display/Hide the children nodes.
              */
-            toggleChildren() {
-                this.set("data.open", !this.data.open && this.data.children && this.data.children.length);
+            toggleChildren(e) {
+                let eventObject = {
+                    element: this,
+                    selectedDetail: e.currentTarget.dataset.index
+                }
+                this.set("data.open", !this.data.open && this.data.type == "tree");
                 //Todo: the 1.0 version had: setTimeout(this.fire.bind(this, "toggle", this)); 
                 //Is this translation correct?
-                setTimeout(this.dispatchEvent(new CustomEvent('toggle', { bubbles: true, composed: true, detail: this })));
+                if (this.data.open && this.data.type == "tree") {
+                    setTimeout(this.dispatchEvent(new CustomEvent('toggle', {bubbles: true, composed: true, detail: eventObject})));
+                }
             };
 
         };
